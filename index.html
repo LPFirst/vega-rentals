@@ -199,7 +199,7 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px;padding-top:14px;borde
       </section>
       <section class="panel">
         <h3>How rent is set</h3>
-        <p class="small" style="margin-top:4px">Every space pays the same all-inclusive rate per square foot.</p>
+        <p class="small" style="margin-top:4px">Spaces pay one all-inclusive rate per square foot. Offices 310 and 311 are a flat $1,000 a month.</p>
         <div class="calc" id="calc"></div>
       </section>
       <section class="panel">
@@ -288,7 +288,7 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px;padding-top:14px;borde
 </div>
 
 <!-- AVAILABILITY: rewritten by the hourly Stripe sync. rooms = space ids rented whole; seats = {space id: seats rented}. -->
-<script id="availability" type="application/json">{"updated":"2026-10-29T14:55:00-05:00","rooms":[],"seats":{}}</script>
+<script id="availability" type="application/json">{"updated":"2026-11-10T09:45:00-06:00","rooms":[],"seats":{}}</script>
 <script>
 const TODAY = new Date("2026-10-22T12:00:00");
 const FLOOR = { rent: 25328.446, opex: 0 }; // all-in monthly rent for the floor
@@ -300,8 +300,8 @@ const SPACES = [
   {id:"307",type:"Conference",occ:"OPEN",   sqft:196,r:[53,686,170,795]},
   {id:"308",type:"Office",    occ:"OPEN",   sqft:112,r:[53,612,145,686]},
   {id:"309",type:"Office",    occ:"OPEN",   sqft:112,r:[53,539,145,612]},
-  {id:"310",type:"Office",    occ:"OPEN",   sqft:129,r:[141,330,227,415]},
-  {id:"311",type:"Office",    occ:"OPEN",   sqft:129,r:[227,330,314,415]},
+  {id:"310",type:"Office",    occ:"OPEN",   sqft:129,r:[141,330,227,415],price:1000},
+  {id:"311",type:"Office",    occ:"OPEN",   sqft:129,r:[227,330,314,415],price:1000},
   {id:"312",type:"Office",    occ:"OPEN", sqft:129,r:[314,330,400,415]},
   {id:"313",type:"Office",    occ:"OPEN", sqft:132,r:[400,330,472,415]},
   {id:"314",type:"Office",    occ:"OPEN",    sqft:132,r:[472,330,546,415]},
@@ -325,8 +325,8 @@ const PAY = {
   "301":"https://buy.stripe.com/00w7sLa4b3rq5HJ12R33W01","304":"https://buy.stripe.com/aFaeVd3FN0fe6LNdPD33W00",
   "305":"https://buy.stripe.com/7sY28r0tB0fe4DFeTH33W02","306":"https://buy.stripe.com/dRmcN5gsz0fegmndPD33W03",
   "307":"https://buy.stripe.com/eVq28r3FNfa82vxh1P33W04","308":"https://buy.stripe.com/5kQaEX1xFd20eefbHv33W05",
-  "309":"https://buy.stripe.com/7sY7sLa4b5zyc6726V33W06","310":"https://buy.stripe.com/3cI28ra4bgec3zBh1P33W07",
-  "311":"https://buy.stripe.com/cNi5kDb8f7HGeef3aZ33W08","312":"https://buy.stripe.com/bJedR9907gecb23cLz33W09",
+  "309":"https://buy.stripe.com/7sY7sLa4b5zyc6726V33W06","310":"https://buy.stripe.com/9B6aEX0tBgecc67aDr33W0u",
+  "311":"https://buy.stripe.com/3cI5kD9078LK4DFbHv33W0v","312":"https://buy.stripe.com/bJedR9907gecb23cLz33W09",
   "313":"https://buy.stripe.com/3cI5kD1xF0fe3zBbHv33W0a","314":"https://buy.stripe.com/eVq14n5NVd20dabbHv33W0b",
   "315":"https://buy.stripe.com/3cI8wPfov9PO0nph1P33W0c","316":"https://buy.stripe.com/3cIeVddgngec6LNfXL33W0d",
   "317":"https://buy.stripe.com/28E5kDdgngec3zBdPD33W0e","318":"https://buy.stripe.com/7sYaEX7W34vufijfXL33W0f",
@@ -344,6 +344,9 @@ const LANDLORD = false; // landlord tools only show at the #landlord link
 let AVAIL = {updated:null, rooms:[], seats:{}};
 try { AVAIL = Object.assign(AVAIL, JSON.parse(document.getElementById("availability").textContent)); } catch(e) {}
 const seatsTaken = id => { const s = SPACES.find(x=>x.id===id); return s && s.desks ? Math.min(+(AVAIL.seats[id]||0), s.desks) : 0; };
+// Spaces rented outside the website (no Stripe checkout). Kept here, not in the availability line, so the hourly Stripe sync never reopens them.
+const OFFLINE = {"304":"Rented","305":"Rented","306":"Rented","307":"Rented","308":"Rented","309":"Rented","312":"Rented","313":"Rented","314":"Rented","315":"Rented","316":"Rented","317":"Rented","330":"Rented","331":"Rented","333":"Rented","338":"Rented","340":"Rented"};
+SPACES.forEach(s=>{ if(OFFLINE[s.id]) s.occ = OFFLINE[s.id]; });
 SPACES.forEach(s=>{ if(AVAIL.rooms.includes(s.id) || (s.desks && seatsTaken(s.id)>=s.desks)) s.occ = "Rented"; });
 const HOUSE = ["LPFC","Bullpen"]; // LP First's own space, not billed through the portal
 const TOTAL_SQFT = SPACES.reduce((a,s)=>a+s.sqft,0);
@@ -391,7 +394,8 @@ const NS = "http://www.w3.org/2000/svg";
 function el(tag, attrs={}, text){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(text!=null) e.textContent=text; return e; }
 const word = s => s.type==="Conference" ? "seat" : "desk";
 const cap = w => w[0].toUpperCase()+w.slice(1);
-const deskPrice = (s, rate=rateFor()) => s.seatPrice ?? s.sqft*rate/s.desks; // flat seat price if set, else room rent split evenly
+const roomPrice = (s, rate=rateFor()) => s.price ?? s.sqft*rate; // flat monthly price if set, else sq ft x rate
+const deskPrice = (s, rate=rateFor()) => s.seatPrice ?? roomPrice(s,rate)/s.desks; // flat seat price if set, else room rent split evenly
 const deskSel = id => [...selected].filter(k=>k.startsWith(id+"#")).map(k=>+k.split("#")[1]).sort((a,b)=>a-b);
 let focus = null; // room open in the desk picker
 function toggleRoom(id){ if(seatsTaken(id)>0) return; if(selected.has(id)) selected.delete(id); else { deskSel(id).forEach(n=>selected.delete(id+"#"+n)); selected.add(id); } }
@@ -408,8 +412,8 @@ function renderPlan(){
     const g = el("g",{class:"space "+(open?"":"taken ")+(selected.has(s.id)?"selected ":"")+(ds.length?"partial ":"")+(focus===s.id?"focus":""),"data-id":s.id});
     if(open){ g.setAttribute("tabindex","0"); g.setAttribute("role","button");
       g.setAttribute("aria-label", multi
-        ? `${s.type} ${s.id}, ${s.desks} ${word(s)}s at ${money(deskPrice(s,rate))} each, or ${money(s.sqft*rate)} for the whole room`
-        : `${s.type} ${s.id}, ${s.sqft} square feet, ${money(s.sqft*rate)} per month`);
+        ? `${s.type} ${s.id}, ${s.desks} ${word(s)}s at ${money(deskPrice(s,rate))} each, or ${money(roomPrice(s,rate))} for the whole room`
+        : `${s.type} ${s.id}, ${s.sqft} square feet, ${money(roomPrice(s,rate))} per month`);
       if(!multi) g.setAttribute("aria-pressed",selected.has(s.id)?"true":"false"); }
     else { g.setAttribute("aria-label",`${s.type} ${s.id}, occupied`); }
     g.appendChild(el("rect",{x:x1+pad,y:y1+pad,width:w,height:h,rx:4}));
@@ -421,7 +425,7 @@ function renderPlan(){
       g.appendChild(el("text",{x:cx,y:dy+(conf?26:20),class:"price"}, money(deskPrice(s,rate),0)+"/"+word(s)));
     } else {
       g.appendChild(el("text",{x:cx,y:cy+(conf?2:-2),class:"id"},s.id));
-      g.appendChild(el("text",{x:cx,y:cy+(conf?24:20),class:"price"}, open ? money(s.sqft*rate,0) : "Taken"));
+      g.appendChild(el("text",{x:cx,y:cy+(conf?24:20),class:"price"}, open ? money(roomPrice(s,rate),0) : "Taken"));
     }
     if(open){
       const act = multi ? ()=>openPicker(s.id)
@@ -445,7 +449,7 @@ function renderPicker(){
     </div>
     <div class="seat-grid">${Array.from({length:s.desks},(_,i)=>i+1).map(n=>`
       <button class="seat ${ds.includes(n)?"on":""}" data-n="${n}" aria-pressed="${ds.includes(n)}" ${whole||n<=taken?"disabled":""}>${cap(W)} ${n}<span class="num">${n<=taken?"Taken":money(dp)}</span></button>`).join("")}</div>
-    ${taken ? `<p class="small" style="margin-top:12px">${taken} of ${s.desks} ${W}s are already rented, so the whole room isn't available.</p>` : `<button class="btn ${whole?"primary":""}" id="pick-whole" style="width:100%;margin-top:12px" aria-pressed="${whole}">${whole?"Whole room is in your quote":"Rent the whole room instead"} · ${money(s.sqft*rate)}</button>`}
+    ${taken ? `<p class="small" style="margin-top:12px">${taken} of ${s.desks} ${W}s are already rented, so the whole room isn't available.</p>` : `<button class="btn ${whole?"primary":""}" id="pick-whole" style="width:100%;margin-top:12px" aria-pressed="${whole}">${whole?"Whole room is in your quote":"Rent the whole room instead"} · ${money(roomPrice(s,rate))}</button>`}
     <p class="small" style="margin-top:8px">${s.seatPrice ? `Each ${W} is a flat ${money(s.seatPrice)} a month.` : `Each ${W} is the room's rent split evenly across its ${s.desks} ${W}s.`}</p>`;
   p.querySelectorAll(".seat").forEach(b=>b.onclick=()=>{ toggleDesk(s.id,+b.dataset.n); renderPublic(); p.querySelector(`.seat[data-n="${b.dataset.n}"]`)?.focus(); });
   const pw=p.querySelector("#pick-whole"); if(pw) pw.onclick=()=>{ toggleRoom(s.id); renderPublic(); p.querySelector("#pick-whole")?.focus(); };
@@ -454,7 +458,7 @@ function renderPicker(){
 function quoteLines(rate){
   const lines=[];
   SPACES.slice().sort((a,b)=>a.id.localeCompare(b.id)).forEach(s=>{
-    if(selected.has(s.id)) lines.push({label:`${s.type} ${s.id}${s.desks?" (whole room)":""}`, sub:`${s.sqft} sq ft × ${money(rate)}${s.note?` · ${s.note}`:""}`, amt:s.sqft*rate, url:PAY[s.id], cta:"Rent this space"});
+    if(selected.has(s.id)) lines.push({label:`${s.type} ${s.id}${s.desks?" (whole room)":""}`, sub:`${s.sqft} sq ft${s.price?" · flat monthly rate":` × ${money(rate)}`}${s.note?` · ${s.note}`:""}`, amt:roomPrice(s,rate), url:PAY[s.id], cta:"Rent this space"});
     const ds = s.desks ? deskSel(s.id) : [];
     if(ds.length){ const W=word(s), pl=ds.length>1?"s":"";
       lines.push({label:`${ds.length} ${W}${pl} in ${s.id}`, sub:`${cap(W)}${pl} ${ds.join(", ")} · ${money(deskPrice(s,rate))} each`, amt:ds.length*deskPrice(s,rate), url:SEAT_PAY[s.id], cta:`Rent ${ds.length} ${W}${pl}`, hint:ds.length>1?`At checkout, set the quantity to ${ds.length}.`:""}); }
@@ -497,7 +501,7 @@ function renderOpen(){
   document.getElementById("open-list").innerHTML = SPACES.filter(s=>s.occ==="OPEN").map(s=>{
     const on = selected.has(s.id) || (s.desks && deskSel(s.id).length);
     const left = s.desks ? s.desks-seatsTaken(s.id) : 0;
-    const txt = s.desks ? `${s.id} · ${left} of ${s.desks} ${word(s)}s left · ${money(deskPrice(s,rate),0)} each` : `${s.id} · ${s.sqft} sf · ${money(s.sqft*rate,0)}`;
+    const txt = s.desks ? `${s.id} · ${left} of ${s.desks} ${word(s)}s left · ${money(deskPrice(s,rate),0)} each` : `${s.id} · ${s.sqft} sf · ${money(roomPrice(s,rate),0)}`;
     return `<button class="chip ${on?"on":""}" data-id="${s.id}" aria-pressed="${!!on}">${txt}</button>`; }).join("");
   document.querySelectorAll("#open-list .chip").forEach(b=>b.onclick=()=>{ const s=byId(b.dataset.id);
     if(s.desks) openPicker(s.id); else { toggleRoom(s.id); renderPublic(); } });
@@ -542,7 +546,7 @@ function renderPortal(){
     </div>
     <div class="tbl"><table>
       <thead><tr><th>Space</th><th>Type</th><th class="num">Sq ft</th><th class="num">Monthly</th></tr></thead>
-      <tbody>${b.spaces.map(s=>`<tr><td>${s.id}</td><td>${s.type}</td><td class="num">${s.sqft}</td><td class="num">${money(s.sqft*b.rate)}</td></tr>`).join("")}
+      <tbody>${b.spaces.map(s=>`<tr><td>${s.id}</td><td>${s.type}</td><td class="num">${s.sqft}</td><td class="num">${money(roomPrice(s,b.rate))}</td></tr>`).join("")}
       ${b.shared?`<tr><td colspan="3">Share of unused conference rooms<div class="small">${(b.attr*100).toFixed(1)}% of ${money(b.unused)} (rooms 301, 335, 336)</div></td><td class="num">${money(b.shared)}</td></tr>`:""}</tbody>
       <tfoot><tr><td colspan="3">Total per month</td><td class="num">${money(b.total)}</td></tr></tfoot>
     </table></div>
@@ -597,7 +601,7 @@ function renderAdmin(){
     <thead><tr><th>Space</th><th>Type</th><th>Occupant</th><th class="num">Sq ft</th><th class="num">Monthly</th></tr></thead>
     <tbody>${rows.map(s=>`<tr><td>${s.id}${s.note?`<div class="small">${s.note}</div>`:""}</td><td>${s.type}${s.desks?`<div class="small">${s.desks} ${word(s)}s · ${money(deskPrice(s,rate))} each</div>`:""}</td>
       <td>${s.occ==="OPEN"?`<span class="pill open">Open</span>`:HOUSE.includes(s.occ)?`<span class="pill house">${s.occ}</span>`:s.occ}</td>
-      <td class="num">${s.sqft}</td><td class="num">${money(s.sqft*rate)}</td></tr>`).join("")}</tbody>
+      <td class="num">${s.sqft}</td><td class="num">${money(roomPrice(s,rate))}</td></tr>`).join("")}</tbody>
     <tfoot><tr><td colspan="3">All spaces</td><td class="num">${sq(TOTAL_SQFT)}</td><td class="num">${money(TOTAL_SQFT*rate)}</td></tr></tfoot>`;
   renderMarkup();
   document.getElementById("npam-card").hidden = !npam.spaces.length;
@@ -625,7 +629,7 @@ function previewChange(){
   const nr=rateFor(f), cr=rateFor(), d=((nr/cr)-1)*100;
   document.getElementById("chg-preview").textContent = `New rate ${money(nr)} per sq ft (${d>=0?"+":""}${d.toFixed(1)}%). A 129 sq ft office would rent for ${money(129*nr)} a month.`;
 }
-const fullRent = () => SPACES.reduce((a,s)=>a+s.sqft*rateFor(),0);
+const fullRent = () => SPACES.reduce((a,s)=>a+roomPrice(s,rateFor()),0);
 function renderMarkup(){
   const cost = FLOOR.rent+FLOOR.opex, full = fullRent(), margin = full-cost, m = markup/100;
   document.getElementById("mk-val").textContent = `${markup}%`;
