@@ -347,6 +347,9 @@ const seatsTaken = id => { const s = SPACES.find(x=>x.id===id); return s && s.de
 // Spaces rented outside the website (no Stripe checkout). Kept here, not in the availability line, so the hourly Stripe sync never reopens them.
 const OFFLINE = {"304":"Rented","305":"Rented","306":"Rented","307":"Rented","308":"Rented","309":"Rented","312":"Rented","313":"Rented","314":"Rented","315":"Rented","316":"Rented","317":"Rented","330":"Rented","331":"Rented","333":"Rented","338":"Rented","340":"Rented"};
 SPACES.forEach(s=>{ if(OFFLINE[s.id]) s.occ = OFFLINE[s.id]; });
+// Spaces not offered for rent at all: shown as "Not available", with no price.
+const OFF_LIMITS = ["336"];
+SPACES.forEach(s=>{ if(OFF_LIMITS.includes(s.id)) s.occ = "Off limits"; });
 SPACES.forEach(s=>{ if(AVAIL.rooms.includes(s.id) || (s.desks && seatsTaken(s.id)>=s.desks)) s.occ = "Rented"; });
 const HOUSE = ["LPFC","Bullpen"]; // LP First's own space, not billed through the portal
 const TOTAL_SQFT = SPACES.reduce((a,s)=>a+s.sqft,0);
@@ -417,9 +420,9 @@ function renderPlan(){
         ? `${s.type} ${s.id}, ${s.desks} ${word(s)}s at ${money(deskPrice(s,rate))} each, or ${money(roomPrice(s,rate))} for the whole room`
         : `${s.type} ${s.id}, ${s.sqft} square feet, ${money(roomPrice(s,rate))} per month`);
       if(!multi) g.setAttribute("aria-pressed",selected.has(s.id)?"true":"false"); }
-    else { g.setAttribute("aria-label",`${s.type} ${s.id}, taken, ${money(roomPrice(s,rate))} per month`); }
+    else { g.setAttribute("aria-label", s.occ==="Off limits" ? `${s.type} ${s.id}, not available` : `${s.type} ${s.id}, taken, ${money(roomPrice(s,rate))} per month`); }
     g.appendChild(el("rect",{x:x1+pad,y:y1+pad,width:w,height:h,rx:4}));
-    if (conf) g.appendChild(el("text",{x:cx,y:cy-(h>90?30:24),class:"tag"}, (s.name||"Conf.") + (open?"":" · Taken")));
+    if (conf) g.appendChild(el("text",{x:cx,y:cy-(h>90?30:24),class:"tag"}, (s.name||"Conf.") + (open?"":s.occ==="Off limits"?"":" · Taken")));
     else if (!open) g.appendChild(el("text",{x:cx,y:cy-21,class:"tag"}, "Taken"));
     if (multi){
       g.appendChild(el("text",{x:cx,y:cy+(conf?2:-12),class:"id"},s.id));
@@ -428,7 +431,7 @@ function renderPlan(){
       g.appendChild(el("text",{x:cx,y:dy+(conf?26:20),class:"price"}, money(deskPrice(s,rate),0)+"/"+word(s)));
     } else {
       g.appendChild(el("text",{x:cx,y:cy+(conf?2:-2),class:"id"},s.id));
-      g.appendChild(el("text",{x:cx,y:cy+(conf?24:20),class:"price"}, money(roomPrice(s,rate),0)));
+      g.appendChild(el("text",{x:cx,y:cy+(conf?24:20),class:"price"}, s.occ==="Off limits" ? "Not available" : money(roomPrice(s,rate),0)));
     }
     if(open){
       const act = multi ? ()=>openPicker(s.id)
