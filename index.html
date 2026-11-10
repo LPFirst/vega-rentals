@@ -309,6 +309,7 @@ const SPACES = [
   {id:"316",type:"Office",    occ:"OPEN", sqft:167,r:[621,330,731,415]},
   {id:"317",type:"Office",    occ:"OPEN",    sqft:114,r:[731,330,807,415]},
   {id:"318",type:"Office",    occ:"OPEN",   sqft:107,r:[807,330,880,415]},
+  {id:"327",type:"Room",      occ:"OPEN",   sqft:0,  r:[815,455,877,520],name:"Mother's room",price:400},
   {id:"330",type:"Office",    occ:"OPEN",  sqft:109,r:[1190,327,1270,400],price:7000},
   {id:"331",type:"Office",    occ:"OPEN",   sqft:101,r:[1190,255,1270,327]},
   {id:"333",type:"Office",    occ:"OPEN", sqft:153,r:[1190,146,1270,255]},
@@ -322,7 +323,7 @@ const SPACES = [
 ];
 // Live Stripe payment links (LP First Capital account), 10% markup, monthly
 const PAY = {
-  "301":"https://buy.stripe.com/28EeVd7W35zyfijdPD33W0w","304":"https://buy.stripe.com/aFaeVd3FN0fe6LNdPD33W00",
+  "301":"https://buy.stripe.com/28EeVd7W35zyfijdPD33W0w","327":"https://buy.stripe.com/14AcN5fov1jigmn26V33W0H","304":"https://buy.stripe.com/aFaeVd3FN0fe6LNdPD33W00",
   "305":"https://buy.stripe.com/7sY28r0tB0fe4DFeTH33W02","306":"https://buy.stripe.com/dRmcN5gsz0fegmndPD33W03",
   "307":"https://buy.stripe.com/eVq28r3FNfa82vxh1P33W04","308":"https://buy.stripe.com/5kQaEX1xFd20eefbHv33W05",
   "309":"https://buy.stripe.com/7sY7sLa4b5zyc6726V33W06","310":"https://buy.stripe.com/9B6aEX0tBgecc67aDr33W0u",
@@ -418,7 +419,7 @@ function renderPlan(){
     if(open){ g.setAttribute("tabindex","0"); g.setAttribute("role","button");
       g.setAttribute("aria-label", multi
         ? `${s.type} ${s.id}, ${s.desks} ${word(s)}s at ${money(deskPrice(s,rate))} each, or ${money(roomPrice(s,rate))} for the whole room`
-        : `${s.type} ${s.id}, ${s.sqft} square feet, ${money(roomPrice(s,rate))} per month`);
+        : `${s.type} ${s.id}, ${s.sqft?s.sqft+" square feet, ":""}${money(roomPrice(s,rate))} per month`);
       if(!multi) g.setAttribute("aria-pressed",selected.has(s.id)?"true":"false"); }
     else { g.setAttribute("aria-label", s.occ==="Off limits" ? `${s.type} ${s.id}, not available` : `${s.type} ${s.id}, taken, ${money(roomPrice(s,rate))} per month`); }
     g.appendChild(el("rect",{x:x1+pad,y:y1+pad,width:w,height:h,rx:4}));
@@ -464,7 +465,7 @@ function renderPicker(){
 function quoteLines(rate){
   const lines=[];
   SPACES.slice().sort((a,b)=>a.id.localeCompare(b.id)).forEach(s=>{
-    if(selected.has(s.id)) lines.push({label:`${s.type} ${s.id}${s.desks?" (whole room)":""}`, sub:`${s.sqft} sq ft${s.price?" · flat monthly rate":` × ${money(rate)}`}${s.note?` · ${s.note}`:""}`, amt:roomPrice(s,rate), url:PAY[s.id], cta:"Rent this space"});
+    if(selected.has(s.id)) lines.push({label:`${s.type} ${s.id}${s.desks?" (whole room)":""}`, sub:`${s.sqft?s.sqft+" sq ft":"Private room"}${s.price?" · flat monthly rate":` × ${money(rate)}`}${s.note?` · ${s.note}`:""}`, amt:roomPrice(s,rate), url:PAY[s.id], cta:"Rent this space"});
     const ds = s.desks ? deskSel(s.id) : [];
     if(ds.length){ const W=word(s), pl=ds.length>1?"s":"";
       lines.push({label:`${ds.length} ${W}${pl} in ${s.id}`, sub:`${cap(W)}${pl} ${ds.join(", ")} · ${money(deskPrice(s,rate))} each`, amt:ds.length*deskPrice(s,rate), url:SEAT_PAY[s.id], cta:`Rent ${ds.length} ${W}${pl}`, hint:ds.length>1?`At checkout, set the quantity to ${ds.length}.`:""}); }
@@ -507,7 +508,7 @@ function renderOpen(){
   document.getElementById("open-list").innerHTML = SPACES.filter(s=>s.occ==="OPEN").map(s=>{
     const on = selected.has(s.id) || (s.desks && deskSel(s.id).length);
     const left = s.desks ? s.desks-seatsTaken(s.id) : 0;
-    const txt = s.desks ? `${s.id} · ${left} of ${s.desks} ${word(s)}s left · ${money(deskPrice(s,rate),0)} each` : `${s.id} · ${s.sqft} sf · ${money(roomPrice(s,rate),0)}`;
+    const txt = s.desks ? `${s.id} · ${left} of ${s.desks} ${word(s)}s left · ${money(deskPrice(s,rate),0)} each` : `${s.id} · ${s.sqft?s.sqft+" sf":"room"} · ${money(roomPrice(s,rate),0)}`;
     return `<button class="chip ${on?"on":""}" data-id="${s.id}" aria-pressed="${!!on}">${txt}</button>`; }).join("");
   document.querySelectorAll("#open-list .chip").forEach(b=>b.onclick=()=>{ const s=byId(b.dataset.id);
     if(s.desks) openPicker(s.id); else { toggleRoom(s.id); renderPublic(); } });
