@@ -199,7 +199,7 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px;padding-top:14px;borde
       </section>
       <section class="panel">
         <h3>How rent is set</h3>
-        <p class="small" style="margin-top:4px">Spaces pay one all-inclusive rate per square foot. Offices 310 and 311 are a flat $1,000 a month.</p>
+        <p class="small" style="margin-top:4px">Spaces are priced at one all-inclusive rate per square foot.</p>
         <div class="calc" id="calc"></div>
       </section>
       <section class="panel">
@@ -260,8 +260,8 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px;padding-top:14px;borde
         <h3>Markup</h3>
         <p class="small" style="margin:4px 0 12px">Add a markup on top of the floor's cost to see what each space would rent for. At 0%, rent only covers what the floor costs LP First.</p>
         <div class="row between"><label for="mk-range" style="margin:0">Markup over cost</label><span class="num" id="mk-val" style="font-weight:600;font-size:1.15rem">0%</span></div>
-        <input id="mk-range" type="range" min="0" max="40" step="1" value="0" style="padding:0;margin:8px 0 2px;accent-color:var(--accent);background:none;border:0">
-        <div class="row between small"><span>At cost</span><span>+40%</span></div>
+        <input id="mk-range" type="range" min="0" max="80" step="1" value="0" style="padding:0;margin:8px 0 2px;accent-color:var(--accent);background:none;border:0">
+        <div class="row between small"><span>At cost</span><span>+80%</span></div>
         <div class="calc" id="mk-calc"></div>
         <div class="tbl" style="margin-top:14px"><table id="mk-comps"></table></div>
         <div class="row" style="margin-top:12px"><button class="btn" id="mk-reset" type="button">Back to 0%</button></div>
@@ -291,7 +291,7 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px;padding-top:14px;borde
 <script id="availability" type="application/json">{"updated":"2026-11-10T09:45:00-06:00","rooms":[],"seats":{}}</script>
 <script>
 const TODAY = new Date("2026-10-22T12:00:00");
-const FLOOR = { rent: 25328.446, opex: 0 }; // all-in monthly rent for the floor
+const FLOOR = { rent: 0, opex: 0 };
 const SPACES = [
   {id:"301",type:"Conference",occ:"OPEN",   sqft:450,r:[298,456,420,757],name:"Board room"},
   {id:"304",type:"Office",    occ:"OPEN",   sqft:96, r:[190,532,280,604]},
@@ -309,36 +309,36 @@ const SPACES = [
   {id:"316",type:"Office",    occ:"OPEN", sqft:167,r:[621,330,731,415]},
   {id:"317",type:"Office",    occ:"OPEN",    sqft:114,r:[731,330,807,415]},
   {id:"318",type:"Office",    occ:"OPEN",   sqft:107,r:[807,330,880,415]},
-  {id:"330",type:"Office",    occ:"OPEN",  sqft:109,r:[1190,327,1270,400]},
+  {id:"330",type:"Office",    occ:"OPEN",  sqft:109,r:[1190,327,1270,400],price:7000},
   {id:"331",type:"Office",    occ:"OPEN",   sqft:101,r:[1190,255,1270,327]},
   {id:"333",type:"Office",    occ:"OPEN", sqft:153,r:[1190,146,1270,255]},
   {id:"334",type:"Office",    occ:"OPEN",   sqft:96, r:[1062,190,1146,262],note:"Listed as 341 in the rent calc"},
   {id:"335",type:"Conference",occ:"OPEN",   sqft:308,r:[1115,30,1270,144],desks:5},
   {id:"336",type:"Conference",occ:"OPEN",   sqft:297,r:[967,30,1115,144],desks:6},
-  {id:"337",type:"Conference",occ:"OPEN",   sqft:308,r:[812,30,967,144],desks:9,seatPrice:225},
+  {id:"337",type:"Conference",occ:"OPEN",   sqft:308,r:[812,30,967,144],desks:9},
   {id:"339",type:"Office",    occ:"OPEN",   sqft:142,r:[974,190,1062,270],note:"Labeled 338 on the flyer drawing",desks:3},
   {id:"338",type:"Office",    occ:"OPEN",   sqft:125,r:[812,144,927,217],note:"Labeled 339 on the flyer drawing"},
   {id:"340",type:"Office",    occ:"OPEN", sqft:221,r:[812,217,927,327]},
 ];
 // Live Stripe payment links (LP First Capital account), 10% markup, monthly
 const PAY = {
-  "301":"https://buy.stripe.com/00w7sLa4b3rq5HJ12R33W01","304":"https://buy.stripe.com/aFaeVd3FN0fe6LNdPD33W00",
+  "301":"https://buy.stripe.com/28EeVd7W35zyfijdPD33W0w","304":"https://buy.stripe.com/aFaeVd3FN0fe6LNdPD33W00",
   "305":"https://buy.stripe.com/7sY28r0tB0fe4DFeTH33W02","306":"https://buy.stripe.com/dRmcN5gsz0fegmndPD33W03",
   "307":"https://buy.stripe.com/eVq28r3FNfa82vxh1P33W04","308":"https://buy.stripe.com/5kQaEX1xFd20eefbHv33W05",
   "309":"https://buy.stripe.com/7sY7sLa4b5zyc6726V33W06","310":"https://buy.stripe.com/9B6aEX0tBgecc67aDr33W0u",
   "311":"https://buy.stripe.com/3cI5kD9078LK4DFbHv33W0v","312":"https://buy.stripe.com/bJedR9907gecb23cLz33W09",
   "313":"https://buy.stripe.com/3cI5kD1xF0fe3zBbHv33W0a","314":"https://buy.stripe.com/eVq14n5NVd20dabbHv33W0b",
   "315":"https://buy.stripe.com/3cI8wPfov9PO0nph1P33W0c","316":"https://buy.stripe.com/3cIeVddgngec6LNfXL33W0d",
-  "317":"https://buy.stripe.com/28E5kDdgngec3zBdPD33W0e","318":"https://buy.stripe.com/7sYaEX7W34vufijfXL33W0f",
+  "317":"https://buy.stripe.com/28E5kDdgngec3zBdPD33W0e","318":"https://buy.stripe.com/3cIeVdekr4vu3zBcLz33W0x",
   "330":"https://buy.stripe.com/eVqbJ16RZ4vueefeTH33W0g","331":"https://buy.stripe.com/aFa14n0tB8LKfij6nb33W0h",
-  "333":"https://buy.stripe.com/5kQ7sL0tB6DC2vx5j733W0i","334":"https://buy.stripe.com/4gMfZhfov2nm1rt12R33W0j",
-  "335":"https://buy.stripe.com/fZu9AT2BJ2nm6LN6nb33W0m","336":"https://buy.stripe.com/cNi9ATccj2nmeefcLz33W0n",
-  "337":"https://buy.stripe.com/5kQ6oHdgnaTSc674f333W0o","338":"https://buy.stripe.com/3cI14ngsz1ji8TVdPD33W0k",
-  "339":"https://buy.stripe.com/fZu4gz3FN0fe5HJcLz33W0p","340":"https://buy.stripe.com/5kQ6oH7W31jic674f333W0l",
+  "333":"https://buy.stripe.com/5kQ7sL0tB6DC2vx5j733W0i","334":"https://buy.stripe.com/14AdR9ccj7HG2vxbHv33W0y",
+  "335":"https://buy.stripe.com/fZu00jfov5zy3zB3aZ33W0z","336":"https://buy.stripe.com/9B66oH4JR2nmc679zn33W0A",
+  "337":"https://buy.stripe.com/cNi5kDdgnd20eef7rf33W0B","338":"https://buy.stripe.com/3cI14ngsz1ji8TVdPD33W0k",
+  "339":"https://buy.stripe.com/28E4gzccj5zy1rt4f333W0C","340":"https://buy.stripe.com/5kQ6oH7W31jic674f333W0l",
 };
 const SEAT_PAY = {
-  "335":"https://buy.stripe.com/dRm3cvekr2nm6LNfXL33W0q","336":"https://buy.stripe.com/aFa7sL2BJfa8dab3aZ33W0r",
-  "337":"https://buy.stripe.com/5kQ00jekr3rqeefeTH33W0s","339":"https://buy.stripe.com/8x26oH1xF2nm5HJh1P33W0t",
+  "335":"https://buy.stripe.com/7sY9AT0tBfa84DF12R33W0D","336":"https://buy.stripe.com/8x26oH5NV7HG0np26V33W0E",
+  "337":"https://buy.stripe.com/28EbJ16RZ8LK5HJbHv33W0F","339":"https://buy.stripe.com/bJe7sL5NV5zy5HJaDr33W0G",
 };
 const LANDLORD = false; // landlord tools only show at the #landlord link
 let AVAIL = {updated:null, rooms:[], seats:{}};
@@ -361,9 +361,11 @@ let tenant = null;
 let ach = {}; // in-memory only
 
 // ---------- MATH ----------
+const costRate = (f=FLOOR) => LIST_RATE;
+const LIST_RATE = 1000/129; // rent per sq ft per month, set from offices 310/311 ($1,000 for 129 sq ft)
 const MARKUP_SAVED = 0;
 let markup = MARKUP_SAVED; // landlord preview can change this in-browser
-const costRate = (f=FLOOR) => (f.rent + f.opex) / TOTAL_SQFT;
+const pct = v => (Math.round(v*10)/10) + "%";
 const rateFor = (f=FLOOR) => costRate(f) * (1 + markup/100);
 const money = (n,d=2) => n.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:d,maximumFractionDigits:d});
 const sq = n => n.toLocaleString("en-US");
@@ -415,9 +417,10 @@ function renderPlan(){
         ? `${s.type} ${s.id}, ${s.desks} ${word(s)}s at ${money(deskPrice(s,rate))} each, or ${money(roomPrice(s,rate))} for the whole room`
         : `${s.type} ${s.id}, ${s.sqft} square feet, ${money(roomPrice(s,rate))} per month`);
       if(!multi) g.setAttribute("aria-pressed",selected.has(s.id)?"true":"false"); }
-    else { g.setAttribute("aria-label",`${s.type} ${s.id}, occupied`); }
+    else { g.setAttribute("aria-label",`${s.type} ${s.id}, taken, ${money(roomPrice(s,rate))} per month`); }
     g.appendChild(el("rect",{x:x1+pad,y:y1+pad,width:w,height:h,rx:4}));
-    if (conf) g.appendChild(el("text",{x:cx,y:cy-(h>90?30:24),class:"tag"}, s.name||"Conf."));
+    if (conf) g.appendChild(el("text",{x:cx,y:cy-(h>90?30:24),class:"tag"}, (s.name||"Conf.") + (open?"":" · Taken")));
+    else if (!open) g.appendChild(el("text",{x:cx,y:cy-21,class:"tag"}, "Taken"));
     if (multi){
       g.appendChild(el("text",{x:cx,y:cy+(conf?2:-12),class:"id"},s.id));
       const gap=15, start=cx-(s.desks-1)*gap/2, dy=cy+(conf?22:6);
@@ -425,7 +428,7 @@ function renderPlan(){
       g.appendChild(el("text",{x:cx,y:dy+(conf?26:20),class:"price"}, money(deskPrice(s,rate),0)+"/"+word(s)));
     } else {
       g.appendChild(el("text",{x:cx,y:cy+(conf?2:-2),class:"id"},s.id));
-      g.appendChild(el("text",{x:cx,y:cy+(conf?24:20),class:"price"}, open ? money(roomPrice(s,rate),0) : "Taken"));
+      g.appendChild(el("text",{x:cx,y:cy+(conf?24:20),class:"price"}, money(roomPrice(s,rate),0)));
     }
     if(open){
       const act = multi ? ()=>openPicker(s.id)
@@ -489,9 +492,9 @@ function renderCalc(){
     <span class="eq">Floor cost per month</span><span class="num eq">${money(FLOOR.rent+FLOOR.opex)}</span>
     <span>÷ Rentable space</span><span class="num">${sq(TOTAL_SQFT)} sq ft</span>
     ${markup ? `<span>Cost per sq ft / month</span><span class="num">${money(costRate())}</span>
-    <span>+ Markup</span><span class="num">${markup}%</span>` : ""}
+    <span>+ Markup</span><span class="num">${pct(markup)}</span>` : ""}
     <span class="eq">Rate per sq ft / month</span><span class="num eq">${money(r)}</span>
-    <span class="small" style="grid-column:1/-1;margin-top:6px">Rooms ${SPACES.filter(s=>s.desks&&s.occ==="OPEN").map(s=>s.id).join(", ")} can also be rented one desk or seat at a time. Seats in 337 are a flat $225 a month; the others cost the room's rent split evenly across its seats.</span>`;
+    <span class="small" style="grid-column:1/-1;margin-top:6px">Rooms ${SPACES.filter(s=>s.desks&&s.occ==="OPEN").map(s=>s.id).join(", ")} can also be rented one desk or seat at a time. Each seat costs the room's rent split evenly across its seats.</span>`;
   const up = upcoming()[0];
   if(up) document.getElementById("calc").insertAdjacentHTML("beforeend",
     `<span class="small" style="grid-column:1/-1;margin-top:6px">Rate changes to ${money(rateFor(up))} on ${fmtDate(up.date)}.</span>`);
@@ -593,7 +596,7 @@ function renderAdmin(){
   const billed = TENANTS.reduce((a,t)=>a+bill(t).total,0);
   document.getElementById("admin-stats").innerHTML = `
     <div class="stat"><div class="k">Floor cost / mo</div><div class="v">${money(cost)}</div></div>
-    <div class="stat"><div class="k">Rate / sq ft / mo${markup?` · +${markup}%`:""}</div><div class="v">${money(rate)}</div></div>
+    <div class="stat"><div class="k">Rate / sq ft / mo${markup?` · +${pct(markup)}`:""}</div><div class="v">${money(rate)}</div></div>
     <div class="stat"><div class="k">If fully rented / mo</div><div class="v">${money(fullRent())}</div></div>
     <div class="stat"><div class="k">Open space</div><div class="v">${sq(openSq)} sf · ${money(openSq*rate,0)}</div></div>`;
   const rows = SPACES.slice().sort((a,b)=>a.id.localeCompare(b.id));
@@ -632,7 +635,7 @@ function previewChange(){
 const fullRent = () => SPACES.reduce((a,s)=>a+roomPrice(s,rateFor()),0);
 function renderMarkup(){
   const cost = FLOOR.rent+FLOOR.opex, full = fullRent(), margin = full-cost, m = markup/100;
-  document.getElementById("mk-val").textContent = `${markup}%`;
+  document.getElementById("mk-val").textContent = `${pct(markup)}`;
   document.getElementById("mk-range").value = markup;
   document.getElementById("mk-calc").innerHTML = `
     <span>Cost per sq ft / mo</span><span class="num">${money(costRate())}</span>
@@ -648,13 +651,12 @@ function renderMarkup(){
     ["129 sq ft office (312)", byId("312").sqft*r, "Regus Westlake, 1 person: $639"],
     ["167 sq ft office (316)", byId("316").sqft*r, "Regus Rialto, 2 people: $958"],
     ["Seat in 336", deskPrice(seat336,r), "Dwell dedicated desk: $249 · Regus open desk: $409"],
-    ["Seat in 337", deskPrice(byId("337"),r), "Flat price, not marked up"],
   ];
   document.getElementById("mk-comps").innerHTML = `<thead><tr><th>Space</th><th class="num">Yours</th><th>Nearby</th></tr></thead>
     <tbody>${rows.map(x=>`<tr><td>${x[0]}</td><td class="num">${money(x[1],0)}</td><td class="small">${x[2]}</td></tr>`).join("")}</tbody>`;
   document.getElementById("mk-note").textContent = markup!==MARKUP_SAVED
-    ? `Preview only. The floor plan and quotes show these prices in your browser now; renters keep seeing the ${MARKUP_SAVED ? MARKUP_SAVED+"%" : "at-cost"} prices until new Stripe prices are created and the site is updated.`
-    : (MARKUP_SAVED ? `This ${MARKUP_SAVED}% markup is live for renters and matches the Stripe prices.` : "");
+    ? `Preview only. The floor plan and quotes show these prices in your browser now; renters keep seeing the ${MARKUP_SAVED ? pct(MARKUP_SAVED) : "at-cost"} prices until new Stripe prices are created and the site is updated.`
+    : (MARKUP_SAVED ? `This ${pct(MARKUP_SAVED)} markup is live for renters and matches the Stripe prices.` : "");
 }
 document.getElementById("mk-range").addEventListener("input",e=>{ markup=+e.target.value; renderAdmin(); });
 document.getElementById("mk-reset").onclick=()=>{ markup=MARKUP_SAVED; renderAdmin(); };
